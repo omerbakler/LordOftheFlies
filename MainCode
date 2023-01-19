@@ -1,0 +1,66 @@
+# import libs
+
+import cv2
+import numpy as np
+import skimage
+import skimage.io as io
+from matplotlib import pyplot as plt
+from google.colab.patches import cv2_imshow
+from PIL import Image
+
+# Read image
+image = io.imread(f"{folder_path}/Final_project/Dataset/7dol/Team2jpg/IMG_7813.jpg")
+
+# Creating a function that returns the Pixel-Cm Ratio using Aruco marker
+def getPxCmRatio(image):
+  
+  # Load Aruco detector
+  parameters = cv2.aruco.DetectorParameters_create()
+  aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
+
+  # Setting the corners list of the aruco marker to global to use it later
+  global corners
+
+  # Get Aruco marker
+  corners, _, _ = cv2.aruco.detectMarkers(image, aruco_dict, parameters=parameters)
+
+  # Aruco Area
+  aruco_area = cv2.contourArea (corners[0])
+
+  # Get Pixel to cm ratio
+  pixel_cm_ratio = 5*5 / aruco_area # since the AruCo is 5*5 cm, so we devide 25 cm*cm by the number of pixels
+  
+  return pixel_cm_ratio
+  
+# Creating a function to return an image without Aruco marker to help further segmentation
+def removeAruco(image):
+  
+  # Finding the values of the aruco corners(because it's not an exact square) and asigning
+  if corners[0][0][3][1] < corners[0][0][0][1]:
+    Up = int(corners[0][0][3][1])
+  else:
+    Up = int(corners[0][0][0][1])
+  
+  if corners[0][0][1][1] > corners[0][0][2][1]:
+    Down = int(corners[0][0][1][1])
+  else:
+    Down = int(corners[0][0][2][1])
+
+  if corners[0][0][2][0] < corners[0][0][3][0]:
+    Left = int(corners[0][0][2][0])
+  else:
+    Left = int(corners[0][0][3][0])
+
+  if corners[0][0][0][0] > corners[0][0][1][0]:
+    Right = int(corners[0][0][0][0])
+  else:
+    Right = int(corners[0][0][1][0])
+
+  # Turning the pixels values of the square to white 
+  image_nA = image.copy()
+  image_nA[Up : Down , Left : Right] = (255, 255, 255)
+
+  # Creating an image out of the previously modified array
+  img_nA = Image.fromarray(image_nA)
+
+  return img_nA
